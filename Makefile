@@ -26,20 +26,21 @@ OBJ  := $(patsubst %.c,$(ODIR)/%.o,$(SRC)) $(ODIR)/bytecode.o
 
 LDIR     = deps/luajit/src
 LIBS    := -lluajit $(LIBS)
-CFLAGS  += -I$(LDIR)
-LDFLAGS += -L$(LDIR)
+CFLAGS  += -I$(LDIR) -I$(ODIR)/include
+LDFLAGS += -L$(LDIR) -L$(ODIR)/lib
+DEPS    := $(LDIR)/libluajit.a $(ODIR)/lib/libssl.a
 
 all: $(BIN)
 
 clean:
-	$(RM) $(BIN) obj/*
+	$(RM) -rf $(BIN) obj/*
 	@$(MAKE) -C deps/luajit clean
 
 $(BIN): $(OBJ)
 	@echo LINK $(BIN)
 	@$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-$(OBJ): config.h Makefile $(LDIR)/libluajit.a | $(ODIR)
+$(OBJ): config.h Makefile $(DEPS) | $(ODIR)
 
 $(ODIR):
 	@mkdir -p $@
@@ -52,9 +53,35 @@ $(ODIR)/%.o : %.c
 	@echo CC $<
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
+# Dependencies
+
+OPENSSL := openssl-1.0.2g
+
+deps/$(OPENSSL).tar.gz:
+	curl -L -o $@ https://www.openssl.org/source/$(OPENSSL).tar.gz
+ifeq ($(TARGET), darwin)
+	pushd deps && shasum -a 256 -c $(OPENSSL).tar.gz.sha256
+else
+	pushd deps && sha256sum $(OPENSSL).tar.gz.sha256
+endif
+
+OPENSSL_OPTS = no-shared no-ssl2 no-psk no-srp no-dtls no-idea --prefix=$(abspath $(ODIR))
+
+$(ODIR)/$(OPENSSL): deps/$(OPENSSL).tar.gz | $(ODIR)
+	@tar -C $(ODIR) -xf $<
+
 $(LDIR)/libluajit.a:
 	@echo Building LuaJIT...
 	@$(MAKE) -C $(LDIR) BUILDMODE=static
+
+$(ODIR)/lib/libssl.a: $(ODIR)/$(OPENSSL)
+	@echo Building OpenSSL...
+ifeq ($(TARGET), darwin)
+	@$(SHELL) -c "cd $< && ./Configure $(OPENSSL_OPTS) darwin64-x86_64-cc"
+else
+	@$(SHELL) -c "cd $< && ./config $(OPENSSL_OPTS)"
+endif
+	@$(MAKE) -C $< depend install
 
 .PHONY: all clean
 .SUFFIXES:
