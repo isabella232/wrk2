@@ -56,14 +56,16 @@ $(ODIR)/%.o : %.c
 # Dependencies
 
 OPENSSL := openssl-1.0.2h
+OPENSSL_SHA256 := 1d4007e53aad94a5b2002fe045ee7bb0b3d98f1a47f8b2bc851dcd1c74332919
 
 deps/$(OPENSSL).tar.gz:
-	curl --tlsv1.2 -L -o $@ https://www.openssl.org/source/$(OPENSSL).tar.gz
+	curl --tlsv1.2 -L -o $@.tmp https://www.openssl.org/source/$(OPENSSL).tar.gz
 ifeq ($(TARGET), darwin)
-	pushd deps && shasum -a 256 -c $(OPENSSL).tar.gz.sha256
+	@echo "$(OPENSSL_SHA256)  $@.tmp" | shasum -a 256 -c
 else
-	pushd deps && sha256sum $(OPENSSL).tar.gz.sha256
+	@echo "$(OPENSSL_SHA256)  $@.tmp" | sha256sum -c
 endif
+	mv $@.tmp $@
 
 OPENSSL_OPTS = no-shared no-ssl2 no-psk no-srp no-dtls no-idea --prefix=$(abspath $(ODIR))
 
