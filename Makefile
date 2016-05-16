@@ -58,7 +58,7 @@ $(ODIR)/%.o : %.c
 OPENSSL := openssl-1.0.2g
 
 deps/$(OPENSSL).tar.gz:
-	curl -L -o $@ https://www.openssl.org/source/$(OPENSSL).tar.gz
+	curl --tlsv1.2 -L -o $@ https://www.openssl.org/source/$(OPENSSL).tar.gz
 ifeq ($(TARGET), darwin)
 	pushd deps && shasum -a 256 -c $(OPENSSL).tar.gz.sha256
 else
