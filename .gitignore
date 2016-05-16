@@ -1,5 +1,5 @@
 obj/
-deps/openssl-1.0.2g.tar.gz
+deps/openssl-1.0.2*.tar.gz
 *.o
 *.a
 wrk

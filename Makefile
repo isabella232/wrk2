@@ -55,7 +55,7 @@ $(ODIR)/%.o : %.c
 
 # Dependencies
 
-OPENSSL := openssl-1.0.2g
+OPENSSL := openssl-1.0.2h
 
 deps/$(OPENSSL).tar.gz:
 	curl --tlsv1.2 -L -o $@ https://www.openssl.org/source/$(OPENSSL).tar.gz
